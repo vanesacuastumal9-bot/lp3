@@ -763,7 +763,7 @@ class ModuleFrame(tk.Frame):
 
     # ================= RECIBO ================= #
     def generar_recibo(self):
-
+        
         selected = self.tree.focus()
 
         if not selected:
@@ -787,21 +787,79 @@ class ModuleFrame(tk.Frame):
             return
 
         try:
-
             with open(archivo, "w", encoding="utf-8") as f:
-
-                f.write("=====================================\n")
-                f.write("         PARQUEADERO TICKET\n")
-                f.write("=====================================\n")
+                f.write("===================================\n")
+                f.write("         PARQUEADERO TICKET        \n")
+                f.write("===================================\n")
                 f.write(f"Fecha: {datetime.now()}\n")
-                f.write("-------------------------------------\n")
+                f.write("-----------------------------------\n")
+        
+                # Datos generales del ticket
+                f.write(f"ID: {data.get('id', 'N/A')}\n")
+                f.write(f"FECHA_ENTRADA: {data.get('fecha_entrada', 'N/A')}\n")
+                f.write(f"FECHA_SALIDA: {data.get('fecha_salida', 'N/A')}\n")
+                f.write(f"TIEMPO_TOTAL: {data.get('tiempo_total', 'N/A')}\n")
+                f.write(f"NUMERO_RECIBO: {data.get('numero_recibo', 'N/A')}\n")
+                f.write(f"TOTAL_PAGO: {data.get('total_pago', 'N/A')}\n")
+                f.write(f"FORMA_PAGO_DESCRIPCION: {data.get('forma_pago_descripcion', 'N/A')}\n")
+                f.write(f"ESTADO: {data.get('estado', 'N/A')}\n")
+        
+                # Búsqueda automática de la placa y nombres reales usando los IDs
+                v_id = data.get('vehiculo', '')
+                e_id = data.get('empleado', '')
+                c_id = data.get('cliente', '')
+                t_id = data.get('tarifa', '')
 
-                for campo, valor in data.items():
-                    f.write(f"{campo.upper()}: {valor}\n")
+                # Valores por defecto en caso de que la consulta falle
+                placa_real = f"Vehículo #{v_id}"
+                empleado_real = f"Empleado #{e_id}"
+                cliente_real = f"Cliente #{c_id}"
+                tarifa_real = f"Tarifa #{t_id}"
+                try:
+                    # Nos conectamos a tu base de datos SQLite del proyecto
+                    # (Si tu archivo se llama diferente, ajusta el nombre aquí)
+                    conn = sqlite3.connect("db.sqlite3")
+                    cursor = conn.cursor()
 
-                f.write("-------------------------------------\n")
-                f.write("GRACIAS POR SU VISITA 🚗\n")
-                f.write("=====================================\n")
+                    # 1. Consultar la placa real del vehículo
+                    cursor.execute("SELECT placa FROM vehiculos WHERE id = ?", (v_id,))
+                    res_v = cursor.fetchone()
+                    if res_v and res_v[0]:
+                        placa_real = res_v[0]
+
+                    # 2. Consultar el nombre real del empleado
+                    cursor.execute("SELECT nombre FROM empleados WHERE id = ?", (e_id,))
+                    res_e = cursor.fetchone()
+                    if res_e and res_e[0]:
+                        empleado_real = res_e[0]
+
+                    # 3. Consultar el nombre real del cliente
+                    cursor.execute("SELECT nombre FROM clientes WHERE id = ?", (c_id,))
+                    res_c = cursor.fetchone()
+                    if res_c and res_c[0]:
+                        cliente_real = res_c[0]
+
+                    # 4. Consultar la tarifa real
+                    cursor.execute("SELECT descripcion FROM tarifas WHERE id = ?", (t_id,))
+                    res_t = cursor.fetchone()
+                    if res_t and res_t[0]:
+                        tarifa_real = res_t[0]
+
+                    conn.close()
+                except Exception as ex:
+                    print("Error consultando datos reales para el recibo:", ex)
+
+                # Escribimos los datos reales y automáticos en el recibo
+                f.write(f"PLACA VEHICULO: {placa_real}\n")
+                f.write(f"EMPLEADO: {empleado_real}\n")
+                f.write(f"CLIENTE: {cliente_real}\n")
+                f.write(f"TARIFA: {tarifa_real}\n")
+                
+                f.write("-----------------------------------\n")
+                f.write("  GRACIAS POR SU VISITA 🚗\n")
+                f.write("===================================\n")
+
+            
 
             messagebox.showinfo(
                 "OK",
