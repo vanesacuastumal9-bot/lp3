@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import requests
+import sqlite3
 from datetime import datetime
 
 # ================== ENDPOINTS ================== #
@@ -33,9 +34,9 @@ TEXT = "white"
 
 # ================== APP ================== #
 class App(tk.Tk):
-    def __init__(self):
+    def __init__(self, rol_usuario="Administrador"):
         super().__init__()
-
+        self.rol_usuario = rol_usuario
         self.title("🚗 Sistema Parqueadero PRO")
         self.geometry("1300x720")
         self.configure(bg=BG_MAIN)
@@ -122,7 +123,25 @@ class App(tk.Tk):
             widget.destroy()
 
         ModuleFrame(self.container, url).pack(fill="both", expand=True)
-
+       
+        self.aplicar_permisos_segun_rol()
+    def aplicar_permisos_segun_rol(self):
+        rol = getattr(self, 'rol_usuario', 'Administrador')
+        
+    try:
+        if rol == "Operario":
+            self.btn_usuarios.config(state="disabled")
+            self.btn_tarifas.config(state="disabled")
+            self.btn_empleados.config(state="disabled")
+        elif rol == "Cajera":
+            self.btn_usuarios.config(state="disabled")
+            self.btn_empleados.config(state="disabled")
+        elif rol == "Supervisor":
+            self.btn_usuarios.config(state="disabled")
+        elif rol == "Administrador":
+            pass
+    except Exception as e:
+        print("Nota de permisos:", e)
 
 # ================== MODULO ================== #
 class ModuleFrame(tk.Frame):
@@ -822,25 +841,27 @@ class ModuleFrame(tk.Frame):
                     cursor = conn.cursor()
 
                     # 1. Consultar la placa real del vehículo
-                    cursor.execute("SELECT placa FROM vehiculos WHERE id = ?", (v_id,))
+                    cursor.execute("SELECT placa FROM crud_vehiculo WHERE id = ?", (v_id,))
                     res_v = cursor.fetchone()
+                    print(res_v)
                     if res_v and res_v[0]:
                         placa_real = res_v[0]
 
                     # 2. Consultar el nombre real del empleado
-                    cursor.execute("SELECT nombre FROM empleados WHERE id = ?", (e_id,))
+                    cursor.execute("SELECT nombre FROM crud_empleado WHERE id = ?", (e_id,))
                     res_e = cursor.fetchone()
+                    print(res_e)
                     if res_e and res_e[0]:
                         empleado_real = res_e[0]
 
                     # 3. Consultar el nombre real del cliente
-                    cursor.execute("SELECT nombre FROM clientes WHERE id = ?", (c_id,))
+                    cursor.execute("SELECT nombre FROM cliente WHERE id_cliente = ?", (c_id,))
                     res_c = cursor.fetchone()
                     if res_c and res_c[0]:
                         cliente_real = res_c[0]
 
                     # 4. Consultar la tarifa real
-                    cursor.execute("SELECT descripcion FROM tarifas WHERE id = ?", (t_id,))
+                    cursor.execute("SELECT estado FROM tarifa WHERE id_tarifa = ?", (t_id,))
                     res_t = cursor.fetchone()
                     if res_t and res_t[0]:
                         tarifa_real = res_t[0]
@@ -870,8 +891,57 @@ class ModuleFrame(tk.Frame):
             messagebox.showerror("Error", str(e))
 
 
-if __name__ == "__main__":
-    app = App()
-    app.mainloop()
+
 
     # commit 3 completado y listo para entregar.
+
+import tkinter as tk
+from tkinter import messagebox, ttk
+
+class VentanaLogin:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Login - Sistema Parqueadero")
+        self.root.geometry("350x250")
+        self.root.config(bg="#f0f0f0")
+        
+        # Centrar ventana de login en la pantalla
+        self.root.eval('tk::PlaceWindow . center')
+        
+        # Título
+        tk.Label(root, text="INICIO DE SESIÓN", font=("Arial", 14, "bold"), bg="#f0f0f0", fg="#333").pack(pady=15)
+        
+        # Usuario
+        tk.Label(root, text="Usuario:", bg="#f0f0f0", font=("Arial", 10)).pack(anchor="w", padx=40)
+        self.entry_usuario = tk.Entry(root, font=("Arial", 11), width=25)
+        self.entry_usuario.pack(pady=5)
+        self.entry_usuario.focus()
+        
+        # Contraseña
+        tk.Label(root, text="Contraseña:", bg="#f0f0f0", font=("Arial", 10)).pack(anchor="w", padx=40)
+        self.entry_pass = tk.Entry(root, show="*", font=("Arial", 11), width=25)
+        self.entry_pass.pack(pady=5)
+        
+        # Botón de Ingreso
+        btn_ingresar = tk.Button(root, text="INGRESAR", bg="#28a745", fg="white", font=("Arial", 10, "bold"), width=20, command=self.verificar_credenciales)
+        btn_ingresar.pack(pady=15)
+
+    def verificar_credenciales(self):
+        usuario = self.entry_usuario.get().strip()
+        password = self.entry_pass.get().strip()
+        
+        # Contraseña temporal de prueba para iniciar
+        if password == "1234":
+            messagebox.showinfo("Bienvenido", f"Acceso concedido para: {usuario}")
+            self.root.destroy()  # Cierra la ventana del login
+            
+            # Aquí llamamos a tu clase App original intacta
+            app_principal = App()
+            app_principal.mainloop()
+        else:
+            messagebox.showerror("Error", "Contraseña incorrecta (Usa 1234)")
+
+if __name__ == "__main__":
+    root_login = tk.Tk()
+    app_login = VentanaLogin(root_login)
+    root_login.mainloop()
