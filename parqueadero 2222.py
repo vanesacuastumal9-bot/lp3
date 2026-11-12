@@ -124,24 +124,26 @@ class App(tk.Tk):
 
         ModuleFrame(self.container, url).pack(fill="both", expand=True)
        
+          
         self.aplicar_permisos_segun_rol()
     def aplicar_permisos_segun_rol(self):
         rol = getattr(self, 'rol_usuario', 'Administrador')
         
-    try:
-        if rol == "Operario":
-            self.btn_usuarios.config(state="disabled")
-            self.btn_tarifas.config(state="disabled")
-            self.btn_empleados.config(state="disabled")
-        elif rol == "Cajera":
-            self.btn_usuarios.config(state="disabled")
-            self.btn_empleados.config(state="disabled")
-        elif rol == "Supervisor":
-            self.btn_usuarios.config(state="disabled")
-        elif rol == "Administrador":
-            pass
-    except Exception as e:
-        print("Nota de permisos:", e)
+        try:
+            if rol == "Operario":
+                self.btn_usuarios.config(state="disabled")
+                self.btn_tarifas.config(state="disabled")
+                self.btn_empleados.config(state="disabled")
+            elif rol == "Cajera":
+                self.btn_usuarios.config(state="disabled")
+                self.btn_empleados.config(state="disabled")
+            elif rol == "Supervisor":
+                self.btn_usuarios.config(state="disabled")
+            elif rol == "Administrador":
+                pass
+        except Exception as e:
+            print("Nota de permisos:", e)
+
 
 # ================== MODULO ================== #
 class ModuleFrame(tk.Frame):
@@ -689,7 +691,6 @@ class ModuleFrame(tk.Frame):
             return
 
         try:
-
             response = requests.post(self.url, json=data)
 
             if response.status_code in [200, 201]:
@@ -901,46 +902,63 @@ from tkinter import messagebox, ttk
 class VentanaLogin:
     def __init__(self, root):
         self.root = root
-        self.root.title("Login - Sistema Parqueadero")
-        self.root.geometry("350x250")
-        self.root.config(bg="#f0f0f0")
+        self.root.title("Login - Sistema Parqueadero PRO")
+        self.root.geometry("450x520")
+        self.root.config(bg="#f4fbf7")  # Fondo general verde muy suave
         
-        # Centrar ventana de login en la pantalla
+        # Centrar ventana en la pantalla
         self.root.eval('tk::PlaceWindow . center')
         
-        # Título
-        tk.Label(root, text="INICIO DE SESIÓN", font=("Arial", 14, "bold"), bg="#f0f0f0", fg="#333").pack(pady=15)
+        # Contenedor principal tipo tarjeta (Card blanca con bordes limpios)
+        card = tk.Frame(root, bg="#ffffff", bd=0, relief="flat")
+        card.place(relx=0.5, rely=0.5, anchor="center", width=380, height=450)
+        
+        # Título principal
+        tk.Label(card, text="INICIO DE SESIÓN", font=("Arial", 16, "bold"), bg="#ffffff", fg="#065f46").pack(pady=(30, 20))
+        
+        # Selector de Rol
+        tk.Label(card, text="Seleccione su Rol:", font=("Arial", 10, "bold"), bg="#ffffff", fg="#374151").pack(anchor="w", padx=40)
+        self.combo_rol = ttk.Combobox(card, values=["Administrador", "Supervisor", "Cajera", "Operario"], state="readonly", font=("Arial", 11), width=23)
+        self.combo_rol.pack(pady=(5, 15))
+        self.combo_rol.current(0)
         
         # Usuario
-        tk.Label(root, text="Usuario:", bg="#f0f0f0", font=("Arial", 10)).pack(anchor="w", padx=40)
-        self.entry_usuario = tk.Entry(root, font=("Arial", 11), width=25)
-        self.entry_usuario.pack(pady=5)
+        tk.Label(card, text="Usuario:", font=("Arial", 10, "bold"), bg="#ffffff", fg="#374151").pack(anchor="w", padx=40)
+        self.entry_usuario = tk.Entry(card, font=("Arial", 11), width=25, bd=1, relief="solid")
+        self.entry_usuario.pack(pady=(5, 15))
         self.entry_usuario.focus()
         
         # Contraseña
-        tk.Label(root, text="Contraseña:", bg="#f0f0f0", font=("Arial", 10)).pack(anchor="w", padx=40)
-        self.entry_pass = tk.Entry(root, show="*", font=("Arial", 11), width=25)
-        self.entry_pass.pack(pady=5)
+        tk.Label(card, text="Contraseña:", font=("Arial", 10, "bold"), bg="#ffffff", fg="#374151").pack(anchor="w", padx=40)
+        self.entry_pass = tk.Entry(card, show="*", font=("Arial", 11), width=25, bd=1, relief="solid")
+        self.entry_pass.pack(pady=(5, 25))
         
-        # Botón de Ingreso
-        btn_ingresar = tk.Button(root, text="INGRESAR", bg="#28a745", fg="white", font=("Arial", 10, "bold"), width=20, command=self.verificar_credenciales)
-        btn_ingresar.pack(pady=15)
+        # Botón de Ingreso Moderno (Verde Menta / Esmeralda)
+        btn_ingresar = tk.Button(card, text="INGRESAR", bg="#10b981", fg="white", font=("Arial", 11, "bold"), relief="flat", cursor="hand2", width=22, command=self.verificar_credenciales)
+        btn_ingresar.pack(pady=10)
 
     def verificar_credenciales(self):
-        usuario = self.entry_usuario.get().strip()
+        rol_seleccionado = self.combo_rol.get()
+        usuario = self.entry_usuario.get().strip().lower()
         password = self.entry_pass.get().strip()
         
-        # Contraseña temporal de prueba para iniciar
+        credenciales_validas = {
+            "Administrador": {"admin", "administrador", "jhoselin"},
+            "Supervisor": {"supervisor", "super"},
+            "Cajera": {"cajera", "caja", "ana"},
+            "Operario": {"operario", "operador"}
+        }
+        
         if password == "1234":
-            messagebox.showinfo("Bienvenido", f"Acceso concedido para: {usuario}")
-            self.root.destroy()  # Cierra la ventana del login
-            
-            # Aquí llamamos a tu clase App original intacta
-            app_principal = App()
-            app_principal.mainloop()
+            messagebox.showinfo("Bienvenido", f"Acceso concedido\nRol: {rol_seleccionado}")
+            self.root.destroy()
+            self.abrir_sistema(rol_seleccionado)
         else:
-            messagebox.showerror("Error", "Contraseña incorrecta (Usa 1234)")
+            messagebox.showerror("Error de Acceso", "Contraseña incorrecta (Usa 1234 para probar).")
 
+    def abrir_sistema(self, rol):
+        app_principal = App(rol_usuario=rol)
+        app_principal.mainloop()
 if __name__ == "__main__":
     root_login = tk.Tk()
     app_login = VentanaLogin(root_login)
