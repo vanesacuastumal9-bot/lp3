@@ -104,7 +104,16 @@ class App(tk.Tk):
 
             btn.pack(fill="x", pady=4, padx=12)
             self.buttons.append(btn)
-
+        
+        btn_cerrar_sesion = tk.Button(
+            self.sidebar,
+            text="Cerrar sesión",
+            fg="white",
+            bg="#b91c1c",
+            relief="flat",
+            command=self.cerrar_sesion
+        )
+        btn_cerrar_sesion.pack(side="bottom", pady=15, padx=10, fill="x")
 
         self.load_module(ENDPOINTS["Cliente"], "Cliente")
 
@@ -116,6 +125,14 @@ class App(tk.Tk):
                 bg=GREEN if btn["text"] == name else "#1a1a1a",
                 fg="black" if btn["text"] == name else "white"
             )
+
+    def cerrar_sesion(self):
+        confirmar = messagebox.askyesno("Cerrar sesión", "¿Deseas cerrar la sesión actual?")
+        if confirmar:
+            self.destroy()
+            root_login = tk.Tk()
+            VentanaLogin(root_login)
+            root_login.mainloop()
 
     def load_module(self, url, name):
 
@@ -906,6 +923,7 @@ class ModuleFrame(tk.Frame):
 import tkinter as tk
 from tkinter import messagebox, ttk
 
+    
 class VentanaLogin:
     def __init__(self, root):
         self.root = root
@@ -946,22 +964,44 @@ class VentanaLogin:
 
     def verificar_credenciales(self):
         rol_seleccionado = self.combo_rol.get()
-        usuario = self.entry_usuario.get().strip().lower()
+        usuario = self.entry_usuario.get().strip()
         password = self.entry_pass.get().strip()
         
-        credenciales_validas = {
-            "Administrador": {"admin", "administrador", "jhoselin"},
-            "Supervisor": {"supervisor", "super"},
-            "Cajera": {"cajera", "caja", "ana"},
-            "Operario": {"operario", "operador"}
-        }
-        
-        if password == "1234":
-            messagebox.showinfo("Bienvenido", f"Acceso concedido\nRol: {rol_seleccionado}")
-            self.root.destroy()
-            self.abrir_sistema(rol_seleccionado)
-        else:
-            messagebox.showerror("Error de Acceso", "Contraseña incorrecta (Usa 1234 para probar).")
+        if not usuario or not password:
+            messagebox.showwarning("Aviso", "Ingresa usuario y contraseña")
+            return
+
+        try:
+            ruta_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "p001crud", "db.sqlite3")
+            conn = sqlite3.connect(ruta_db)
+            cursor = conn.cursor()
+
+            cursor.execute(
+                "SELECT usuario, contraseña, estado FROM crud_usuario WHERE usuario = ?",
+                (usuario,)
+            )
+            fila = cursor.fetchone()
+            conn.close()
+
+            if not fila:
+                messagebox.showerror("Error de Acceso", "Usuario no encontrado en la base de datos.")
+                return
+
+            usuario_db, contrasena_db, estado_db = fila
+
+            if estado_db in (0, False, "False", "false"):
+                messagebox.showerror("Error de Acceso", "Este usuario está inactivo.")
+                return
+
+            if str(contrasena_db) == password:
+                messagebox.showinfo("Bienvenido", f"Acceso concedido\nRol: {rol_seleccionado}")
+                self.root.destroy()
+                self.abrir_sistema(rol_seleccionado)
+            else:
+                messagebox.showerror("Error de Acceso", "Contraseña incorrecta.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo validar el inicio de sesión:\n{e}")
 
     def abrir_sistema(self, rol):
         app_principal = App(rol_usuario=rol)
