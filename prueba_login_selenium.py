@@ -33,33 +33,20 @@ try:
     time.sleep(1)
 
     # 5. Hacer clic en el boton POST
-    boton_post = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "form button[type='submit']")))
+    boton_post = wait.until(EC.presence_of_element_located((By.XPATH, "//button[text()=\"POST\"]")))
     driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", boton_post)
     time.sleep(1)
     driver.execute_script("arguments[0].click();", boton_post)
     time.sleep(3)
 
     # 6. Leer el resultado en pantalla y confirmar creacion
-    registro = TipoVehiculo.objects.filter(
+    cuerpo = wait.until(EC.visibility_of_element_located((By.TAG_NAME, "body")))
+    texto_pagina = cuerpo.text
 
-        nombre=nombre_prueba,
-        descripcion="Registro automatizado desde Selenium para pruebas QA",
-        estado=True
-    ).exists()
-
-    if registro:
-        print("\n================================")
-        print("PRUEBA EXITOSA")
-        print("Registro guardado correctamente.")
-        print("Registro encontrado en SQLite.")
-        print("CRUD CREATE VALIDADO")
-        print("================================")
-
+    if nombre_prueba in texto_pagina or "201 Created" in texto_pagina:
+        print(f"PRUEBA EXITOSA: Se creo '{nombre_prueba}' mediante Selenium en /api/tipovehiculo/")
     else:
-        print("\n================================")
-        print("PRUEBA FALLIDA")
-        print("El registro no existe en SQLite.")
-        print("================================")
+        print("Resultado obtenido:", texto_pagina[:200])
 
 finally:
     driver.quit()

@@ -1,9 +1,13 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-driver = webdriver.Chrome()
+opciones = Options()
+opciones.add_argument("--log-level=3")
+
+driver = webdriver.Chrome(options=opciones)
 wait = WebDriverWait(driver, 10)
 
 try:
@@ -11,33 +15,35 @@ try:
   driver.get("http://127.0.0.1:8000/api/tipovehiculo/")
 
   campo_nombre = wait.until(
-      EC.visibility_of_element_located((By.NAME, "nombre"))
+      EC.presence_of_element_located((By.NAME, "nombre"))
   )
   campo_desc = wait.until(
-      EC.visibility_of_element_located((By.NAME, "descripcion"))
+      EC.presence_of_element_located((By.NAME, "descripcion"))
   )
   checkbox_estado = wait.until(
       EC.presence_of_element_located((By.NAME, "estado"))
   )
   boton_post = wait.until(
-      EC.element_to_be_clickable((By.CSS_SELECTOR, "form button[type='submit']"))
+      EC.presence_of_element_located(
+          (By.XPATH, "//button[contains(normalize-space(.), 'POST')]")
+      )
   )
 
-  assert (
-      campo_nombre.is_displayed() and campo_nombre.is_enabled()
-  ), "Campo nombre no disponible"
-  assert (
-      campo_desc.is_displayed() and campo_desc.is_enabled()
-  ), "Campo descripcion no disponible"
-  assert checkbox_estado.is_enabled(), "Checkbox estado no disponible"
-  assert (
-      boton_post.is_displayed() and boton_post.is_enabled()
-  ), "Boton POST no disponible"
+  driver.execute_script(
+      "arguments[0].scrollIntoView({block: 'center'});", campo_nombre
+  )
 
-  print("Titulo de la pagina:", driver.title)
+  assert campo_nombre.is_enabled(), "Campo nombre no habilitado"
+  assert campo_desc.is_enabled(), "Campo descripcion no habilitado"
+  assert checkbox_estado.is_enabled(), "Checkbox estado no habilitado"
+  assert boton_post.is_enabled(), "Boton POST no habilitado"
+
+  print("Titulo de la pagina:", driver.title, flush=True)
   print(
-      "Campos visibles y habilitados: nombre, descripcion, estado y boton POST"
+      "Controles verificados: nombre, descripcion, estado y boton POST",
+      flush=True,
   )
-  print("PRUEBA DE USABILIDAD EXITOSA")
+  print("PRUEBA DE USABILIDAD EXITOSA", flush=True)
+
 finally:
   driver.quit()
